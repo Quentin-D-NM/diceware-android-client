@@ -2,6 +2,7 @@ package edu.cnm.deepdive.diceware.service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import edu.cnm.deepdive.diceware.BuildConfig;
 import edu.cnm.deepdive.diceware.model.Passphrase;
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -20,7 +21,7 @@ import retrofit2.http.Path;
 public interface DicewareService {
 
   @GET("passphrases/")
-  Observable<List<Passphrase[]>> getAll(@Header("Authorization") String token);
+  Observable<List<Passphrase>> getAll(@Header("Authorization") String token);
 
   @GET("passphrases/{id}")
   Single<Passphrase> get(@Header("Authorization") String token, @Path("id") long id);
@@ -52,6 +53,7 @@ public interface DicewareService {
       Retrofit retrofit = new Retrofit.Builder()
           .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
           .addConverterFactory(GsonConverterFactory.create(gson))
+          .baseUrl(BuildConfig.BASE_URL)
           .build();
       INSTANCE = retrofit.create(DicewareService.class);
     }
