@@ -19,6 +19,7 @@ public class MainViewModel extends AndroidViewModel {
   private final MutableLiveData<List<Passphrase>> passphrases= new MutableLiveData<>();
   private final MutableLiveData<GoogleSignInAccount> account = new MutableLiveData<>();
   private final MutableLiveData<Throwable> throwable = new MutableLiveData<>();
+  private final DicewareService dicewareService = DicewareService.getInstance();
 
   public MainViewModel(@NonNull Application application) {
     super(application);
@@ -41,7 +42,7 @@ public class MainViewModel extends AndroidViewModel {
     GoogleSignInAccount account = this.account.getValue();
     if (passphrase !=  null && passphrase.getId() > 0 && account != null) {
       String token = getApplication().getString(R.string.oauth_header, account.getIdToken());
-      DicewareService.getInstance().delete(token, passphrase.getId())
+      dicewareService.delete(token, passphrase.getId())
           .subscribeOn(Schedulers.io())
           .subscribe(
               () -> refreshPassphrases(account),
@@ -59,10 +60,35 @@ public class MainViewModel extends AndroidViewModel {
     }
   }
 
+  public void addPassphrase(Passphrase passphrase) {
+    GoogleSignInAccount account = this.account.getValue();
+    if (account != null) {
+      String token = getApplication().getString(R.string.oauth_header, account.getIdToken());
+      dicewareService.post(token, passphrase)
+          .subscribeOn(Schedulers.io()) //schedualers.io does task in background
+          .subscribe(
+              (p) -> refreshPassphrases(account), (t) -> this.throwable.postValue(t)
+          );
+    }
+  }
+
+  public void updatePassphrase(Passphrase passphrase) {
+    GoogleSignInAccount account = this.account.getValue();
+    if (account != null) {
+      String token = getApplication().getString(R.string.oauth_header, account.getIdToken());
+      dicewareService.put(token, passphrase.getId(), passphrase)
+          .subscribeOn(Schedulers.io()) //schedualers.io does task in background
+          .subscribe(
+              (p) -> refreshPassphrases(account), (t) -> this.throwable.postValue(t)
+          );
+    }
+  }
+
+
   private void refreshPassphrases(GoogleSignInAccount account) {
       String token = getApplication().getString(R.string.oauth_header, account.getIdToken());
       Log.d("Oauth2.0 token", token); //FIXME Remove before shipping.
-      DicewareService.getInstance().getAll(token)
+      dicewareService.getAll(token)
           .subscribeOn(Schedulers.io())
           .subscribe(
               (passphrases) -> this.passphrases.postValue(passphrases),

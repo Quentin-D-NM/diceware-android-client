@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import edu.cnm.deepdive.diceware.R;
+import edu.cnm.deepdive.diceware.model.Passphrase;
 import edu.cnm.deepdive.diceware.service.GoogleSignInService;
 import edu.cnm.deepdive.diceware.view.PassphraseAdapteer;
 import edu.cnm.deepdive.diceware.viewmodel.MainViewModel;
@@ -39,9 +40,14 @@ public class MainActivity extends AppCompatActivity {
     viewModel.getPassphrases().observe(this, (passphrases) -> {
       PassphraseAdapteer adapteer = new PassphraseAdapteer(this, passphrases,
           (view, position, passphrase) -> {
-            // TODO Add code to pop up editor.
             Log.d("Passphrase click", passphrase.getKey());
-          },
+            PassphraseFragment fragment =  new PassphraseFragment().newInstance(passphrase);
+            fragment.setListener((p) -> {
+              waiting.setVisibility(View.VISIBLE);
+              viewModel.updatePassphrase(p);
+            });
+            fragment.show(getSupportFragmentManager(), fragment.getClass().getSimpleName());
+            },
           (menu, position, passphrase) -> {
             Log.d("Passphrase context", passphrase.getKey());
             getMenuInflater().inflate(R.menu.passphrase_context, menu);
@@ -76,12 +82,14 @@ public class MainActivity extends AppCompatActivity {
     setSupportActionBar(toolbar);
 
     FloatingActionButton fab = findViewById(R.id.fab);
-    fab.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-            .setAction("Action", null).show();
-      }
+    fab.setOnClickListener(view -> {
+      //new calls a constructor factory methods dont need a new keyword
+      PassphraseFragment fragment = PassphraseFragment.newInstance();
+      fragment.setListener((passphrase) ->  {
+        waiting.setVisibility(View.VISIBLE);
+        viewModel.addPassphrase(passphrase);
+      });
+      fragment.show(getSupportFragmentManager(), fragment.getClass().getSimpleName());
     });
     waiting = findViewById(R.id.waiting);
     passphraseList = findViewById(R.id.keyword_list);
